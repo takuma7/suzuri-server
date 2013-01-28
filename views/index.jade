@@ -2,4 +2,9 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #{title}
+  - if(!user)
+    p Welcome to #{title}
+    a(href='/auth/facebook') login with facebook
+  - else
+    img(src='#{user.image}')
+    p #{user.name}
