@@ -24,14 +24,22 @@ var UserSchema = new Schema({
   last_name: String,
   link: String,
   image: String,
+  marker_id: Number,
   created: {type: Date, default: Date.now}
-})
-
+});
 mongoose.model('User', UserSchema);
+
+var MarkerSchema = new Schema({
+  marker_id: Number,
+  marker: String,
+  occupied: Boolean
+});
+mongoose.model('Marker', MarkerSchema);
 
 mongoose.connect('mongodb://localhost/suzuri');
 
 var User = mongoose.model('User');
+var Marker = mongoose.model('Marker');
 
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -50,18 +58,21 @@ passport.use(new FacebookStrategy({
       if(user) {
         done(null, user);
       } else {
-        var user = new User();
-        user.provider = "facebook";
-        user.uid = profile.id;
-        user.username = profile._json.username;
-        user.name = profile._json.name;
-        user.first_name = profile._json.first_name;
-        user.last_name = profile._json.last_name;
-        user.link = profile._json.link;
-        user.image = 'https://graph.facebook.com/' + user.username + '/picture';
-        user.save(function(err) {
-          if(err) { throw err; }
-          done(null, user);
+        Marker.findOneAndUpdate({occupied: false}, {occupied: true}, function(err, marker){
+          var user = new User();
+          user.provider = "facebook";
+          user.uid = profile.id;
+          user.username = profile._json.username;
+          user.name = profile._json.name;
+          user.first_name = profile._json.first_name;
+          user.last_name = profile._json.last_name;
+          user.link = profile._json.link;
+          user.image = 'https://graph.facebook.com/' + user.username + '/picture';
+          user.marker_id = marker.marker_id;
+          user.save(function(err) {
+            if(err) { throw err; }
+            done(null, user);
+          });
         });
       }
     })
