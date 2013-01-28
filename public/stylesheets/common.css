@@ -1,0 +1,30 @@
+.marker{
+  margin: 20px 0;
+  padding: 0;
+}
+  
+.marker table{
+  table-layout: fixed;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-spacing: 0;
+}
+
+.marker table tr{
+  margin: 0;
+  padding: 0;
+}
+
+.marker table td{
+  margin: 0;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  background: #ffffff;
+}
+  
+#auth-btn {
+  display: block;
+  width: 100%;
+}

@@ -1,10 +1,44 @@
 extends layout
 
 block content
-  h1= title
-  - if(!user)
-    p Welcome to #{title}
-    a(href='/auth/facebook') login with facebook
-  - else
-    img(src='#{user.image}')
-    p #{user.name}
+  - if(user)
+    script
+      $(document).ready(function(){
+        var marker_id = #{user.marker_id};
+        var marker_code = "#{user.marker}";
+        $(".marker td").each(function(i, elm){
+          if(marker_code[i] == '1'){
+            $(this).css("background", "#000000");
+          }
+        });
+        $('input[type="submit"]').buttonMarkup({corners: false});
+      });
+  .navbar.navbar-fixed-top
+    .navbar-inner
+      .container
+        a.brand(href='/')= title
+        .pull-right
+          - if(!user)
+            a.btn(href='/auth/facebook') login with facebook
+          - else
+            .btn-group
+              a.btn.dropdown-toggle('data-toggle'='dropdown', href='#')
+                img(src='#{user.image}', width=20, height=20, style='display:inline-block; margin-right: 5px')
+                = user.name
+                span.caret
+              ul.dropdown-menu
+                li
+                  a(href='/logout') logout
+  div('data-role'='content')
+    - if(!user)
+      .hero-unit
+        h1 Suzuri
+        p suzuri is a multi-user tabletop interface.
+    - else
+      .marker
+        table
+          - for(var i=0; i<8; i++)
+            tr
+              -for(var j=0; j<8; j++)
+                td
+      input.btn.btn-primary#auth-btn(type='submit', value='Tap Here')

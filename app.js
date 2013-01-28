@@ -25,6 +25,7 @@ var UserSchema = new Schema({
   link: String,
   image: String,
   marker_id: Number,
+  marker: String,
   created: {type: Date, default: Date.now}
 });
 mongoose.model('User', UserSchema);
@@ -69,6 +70,7 @@ passport.use(new FacebookStrategy({
           user.link = profile._json.link;
           user.image = 'https://graph.facebook.com/' + user.username + '/picture';
           user.marker_id = marker.marker_id;
+          user.marker = marker.marker;
           user.save(function(err) {
             if(err) { throw err; }
             done(null, user);
