@@ -1,44 +1,137 @@
 extends layout
 
 block content
+  style
+    .content[content="welcome"] {
+      display: none;
+    }
+    .content[content="main"]{
+
+    }
+    .content[content="suzuri"]{
+      display: none;
+    }
   - if(user)
     script
       $(document).ready(function(){
+        $('#color').spectrum();
+        $('.content[content="welcome"]').fadeIn(1000, function(){
+          setTimeout(function(){
+            $('.content[content="welcome"]').fadeOut(1000);
+            $('.content[content="main"]').fadeIn(1000);
+          }, 1000);
+        });
         var marker_id = #{user.marker_id};
         var marker_code = "#{user.marker}";
-        $(".marker td").each(function(i, elm){
+        $('.marker td').each(function(i, elm){
           if(marker_code[i] == '1'){
             $(this).css("background", "#000000");
           }
         });
-        $('input[type="submit"]').buttonMarkup({corners: false});
+        var socket = io.connect('http://#{conf.io.client.host}:#{conf.io.client.port}');
+        socket.emit('marker tracked?', {marker_id: #{user.marker_id}});
+        socket.on('marker tracking status', function(data){
+          if(data.marker_id == #{user.marker_id}){
+            if(data.tracked){
+              $('#status').text("marker tracked");
+            }else{
+              $('#status').text("marker lost");
+            }
+          }
+        });
+        socket.on('marker tracked', function(data){
+          if(data.marker_id == #{user.marker_id}){
+            $('#status').text("marker tracked");
+          }
+        });
+        socket.on('marker lost', function(data){
+          if(data.marker_id == #{user.marker_id}){
+            $('#status').text("marker lost");
+          }
+        });
+        socket.emit('hand tracked?', {uid: #{user.uid}});
+        socket.on('hand tracked', function(data){
+          if(data.uid == #{user.uid}){
+            $('.content[content="main"]').fadeOut();
+            $('.content[content="suzuri"]').fadeIn();
+          }
+        });
+        socket.on('hand lost', function(data){
+          if(data.uid == #{user.uid}){
+            $('.content[content="suzuri"]').fadeOut();
+            $('.content[content="main"]').fadeIn();
+          }
+        });
+
+        $('#auth-btn').on('click', function(){
+          socket.emit('tap', {tap: true, marker_id: #{user.marker_id}, uid: '#{user.uid}'});
+        });
+        
+        $('input[name="color"]').on('change', function(){
+          socket.emit('suzuri color changed', {uid: '#{user.uid}', color: $(this).val()});
+        });
+
+        $('input[name="size"]').on('change', function(){
+          $('span.size').text($(this).val());
+          socket.emit('suzuri size changed', {uid: '#{user.uid}', size: Number($(this).val())});
+        });
+
+        socket.on('message', function(data){
+          console.log(data);
+        });
       });
-  .navbar.navbar-fixed-top
-    .navbar-inner
-      .container
-        a.brand(href='/')= title
-        .pull-right
-          - if(!user)
-            a.btn(href='/auth/facebook') login with facebook
-          - else
-            .btn-group
-              a.btn.dropdown-toggle('data-toggle'='dropdown', href='#')
-                img(src='#{user.image}', width=20, height=20, style='display:inline-block; margin-right: 5px')
-                = user.name
-                span.caret
-              ul.dropdown-menu
-                li
-                  a(href='/logout') logout
-  div('data-role'='content')
-    - if(!user)
+  - if(false)
+    .navbar.navbar-fixed-top
+      .navbar-inner
+        .container
+          a.brand(href='/')
+            img(src='/images/suzuri-logo16x16.png', style='margin-right: 1px')
+            = 'uzuri'
+          .pull-right
+            - if(!user)
+              a.btn(href='/auth/facebook') login with facebook
+            - else
+              .btn-group
+                a.btn.dropdown-toggle('data-toggle'='dropdown', href='#')
+                  img(src='#{user.image}', width=20, height=20, style='display:inline-block; margin-right: 5px')
+                  = user.name
+                  span.caret
+                ul.dropdown-menu
+                  li
+                    a(href='/logout') logout
+  - if(!user)
+    .content(content='main')
       .hero-unit
-        h1 Suzuri
+        h1
+          img(src='/images/suzuri-logo256x256.png', style='display:inline-block;')
         p suzuri is a multi-user tabletop interface.
-    - else
+        a.btn.btn-primary(href='/auth/facebook') login with facebook
+  - else
+    .content(content='welcome')
+      img.img-circle(src='#{user.image}', width=50, height=50, style='position: absolute; top: 100px; left: 40%;')
+      h1(style='position: absolute; top: 160px;') welcome to suzuri :)
+    .content(content='main', style='display: none;')
       .marker
         table
           - for(var i=0; i<8; i++)
             tr
               -for(var j=0; j<8; j++)
                 td
-      input.btn.btn-primary#auth-btn(type='submit', value='Tap Here')
+      input.btn.btn-primary#auth-btn(type='submit', value='To track your hand, tap me!')
+      ="status: "
+      span#status
+      br
+      a.btn.btn-danger(href='/logout') logout
+    .content(content='suzuri')
+      .brush
+      form.form-horizontal
+        .control-group
+          lable.control-label(for='color') color:
+          .controls
+            input#color(type='color', name='color', value='#{user.suzuri.color}')
+        .control-group
+          label.control-label(for='size') size(1-10):
+          .controls
+            input(type='range', name='size', min=1, max=10, value=#{user.suzuri.size})
+            span.size #{user.suzuri.size}
+      //a.btn.btn-danger(href='/logout') logout
